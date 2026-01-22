@@ -1,26 +1,43 @@
 import requests
+import sys
+
 
 def fetch_bitcoin_price():
-    """Fetch the current price of Bitcoin from the CoinGecko API."""
-    url = "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"
+    """
+    Fetches the current price of Bitcoin in USD from the CoinGecko API.
+
+    Returns:
+        float: The current price of Bitcoin in USD.
     
+    Raises:
+        SystemExit: If the API request fails or the response is invalid.
+    """
+    url = "https://api.coingecko.com/api/v3/simple/price"
+    params = {
+        "ids": "bitcoin",
+        "vs_currencies": "usd"
+    }
+
     try:
-        response = requests.get(url)
-        response.raise_for_status()  # Raise an exception for HTTP errors
+        response = requests.get(url, params=params)
+        response.raise_for_status()  # Raises an HTTPError for bad responses (4xx, 5xx)
         data = response.json()
-        
-        # Extract and return the Bitcoin price in USD
-        bitcoin_price = data.get("bitcoin", {}).get("usd")
-        if bitcoin_price is not None:
-            return bitcoin_price
-        else:
-            raise ValueError("Bitcoin price data not found in the API response.")
-    
+
+        if "bitcoin" not in data or "usd" not in data["bitcoin"]:
+            raise ValueError("Invalid response format from CoinGecko API")
+
+        return data["bitcoin"]["usd"]
+
     except requests.exceptions.RequestException as e:
-        print(f"Error fetching Bitcoin price: {e}")
-        return None
+        raise SystemExit(f"Failed to fetch Bitcoin price: {e}")
+    except ValueError as e:
+        raise SystemExit(f"Error processing API response: {e}")
+
 
 if __name__ == "__main__":
-    price = fetch_bitcoin_price()
-    if price is not None:
-        print(f"Current Bitcoin price: ${price}")
+    try:
+        price = fetch_bitcoin_price()
+        print(f"Current Bitcoin price: ${price:,.2f} USD")
+    except SystemExit as e:
+        print(e)
+        sys.exit(1)
