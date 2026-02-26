@@ -5,3 +5,8 @@
   tasks:
     - name: Check if server is reachable
       ansible.builtin.ping:
+
+    - name: Check Disk Space
+      ansible.builtin.shell: df -h
+      register: disk_space
+      changed_when: false
