@@ -1,0 +1,7 @@
+---
+- name: Infrastructure Heartbeat
+  hosts: all
+  gather_facts: no
+  tasks:
+    - name: Check if server is reachable
+      ansible.builtin.ping:
