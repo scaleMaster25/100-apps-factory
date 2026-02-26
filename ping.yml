@@ -10,3 +10,13 @@
       ansible.builtin.shell: df -h
       register: disk_space
       changed_when: false
+
+    - name: Check Uptime
+      ansible.builtin.shell: uptime
+      register: uptime_info
+      changed_when: false
+
+    - name: Check RAM Usage
+      ansible.builtin.shell: free -h
+      register: ram_usage
+      changed_when: false
