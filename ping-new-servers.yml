@@ -1,0 +1,30 @@
+---
+# Ping test for new servers
+
+- name: Test New Servers Connectivity
+  hosts: new-servers
+  become: yes
+  tasks:
+    - name: Check if server is reachable
+      ansible.builtin.ping:
+      register: ping_result
+
+    - name: Display ping result
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} is reachable"
+
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: hostname_result
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} hostname is {{ hostname_result.stdout }}"
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+
+    - name: Display uptime
+      ansible.builtin.debug:
+        msg: "{{ inventory_hostname }} uptime: {{ uptime_result.stdout }}"
