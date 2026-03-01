@@ -1,17 +1,17 @@
 ---
-# Ping test for new servers
+# Test New Servers Connectivity
 
 - name: Test New Servers Connectivity
-  hosts: new-servers
+  hosts: KlumeDev
   become: yes
   tasks:
-    - name: Check if server is reachable
+    - name: Ping KlumeDev
       ansible.builtin.ping:
       register: ping_result
 
     - name: Display ping result
       ansible.builtin.debug:
-        msg: "{{ inventory_hostname }} is reachable"
+        msg: "KlumeDev (165.245.128.251) is reachable"
 
     - name: Get hostname
       ansible.builtin.command: hostname
@@ -19,7 +19,7 @@
 
     - name: Display hostname
       ansible.builtin.debug:
-        msg: "{{ inventory_hostname }} hostname is {{ hostname_result.stdout }}"
+        msg: "Hostname: {{ hostname_result.stdout }}"
 
     - name: Check uptime
       ansible.builtin.command: uptime
@@ -27,4 +27,4 @@
 
     - name: Display uptime
       ansible.builtin.debug:
-        msg: "{{ inventory_hostname }} uptime: {{ uptime_result.stdout }}"
+        msg: "Uptime: {{ uptime_result.stdout }}"
