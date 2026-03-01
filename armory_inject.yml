@@ -1,0 +1,46 @@
+---
+# Force SSH Key Alignment - Inject Semaphore public key into servers
+
+- name: Force SSH Key Alignment
+  hosts: all
+  gather_facts: no
+  vars:
+    # REPLACE THIS with your actual Semaphore public key
+    # Get it from: Semaphore UI -> Keys -> moon2 nanobot -> View Public Key
+    pub_key: "ssh-rsa AAAAB3NzaC1yc2E... REPLACE_WITH_ACTUAL_PUBLIC_KEY"
+  tasks:
+    - name: Ensure .ssh directory exists
+      ansible.builtin.file:
+        path: /root/.ssh
+        state: directory
+        mode: '0700'
+        owner: root
+        group: root
+
+    - name: Backup existing authorized_keys
+      ansible.builtin.copy:
+        src: /root/.ssh/authorized_keys
+        dest: /root/.ssh/authorized_keys.backup
+        mode: '0600'
+        owner: root
+        group: root
+      failed_when: false
+
+    - name: Inject Master Key into Authorized Keys
+      ansible.builtin.copy:
+        content: "{{ pub_key }}"
+        dest: /root/.ssh/authorized_keys
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Verify authorized_keys permissions
+      ansible.builtin.file:
+        path: /root/.ssh/authorized_keys
+        mode: '0600'
+        owner: root
+        group: root
+
+    - name: Display success message
+      ansible.builtin.debug:
+        msg: "SSH key injected successfully on {{ inventory_hostname }}"
