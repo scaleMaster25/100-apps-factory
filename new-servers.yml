@@ -1,3 +1,10 @@
-[new-servers]
-FactoryFloor ansible_host=165.245.134.252 ansible_user=root
-KlumeDev ansible_host=165.245.128.251 ansible_user=root
+:all:
+  hosts:
+    KlumeDev:
+      ansible_host: 165.245.128.251
+      ansible_user: root
+      # If you are using a specific key file on TheController:
+      # ansible_ssh_private_key_file: /root/.ssh/id_rsa
+      
+      # This line stops the "Are you sure?" prompt for new servers
+      ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
