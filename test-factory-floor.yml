@@ -1,0 +1,40 @@
+---
+# Test Factory Floor connectivity
+
+- name: Test Factory Floor Server
+  hosts: localhost
+  become: no
+  tasks:
+    - name: Add Factory Floor to inventory
+      ansible.builtin.add_host:
+        name: factory_floor
+        ansible_host: 165.245.134.252
+        ansible_user: root
+
+- name: Ping Factory Floor
+  hosts: factory_floor
+  become: yes
+  tasks:
+    - name: Check if server is reachable
+      ansible.builtin.ping:
+      register: ping_result
+
+    - name: Display ping result
+      ansible.builtin.debug:
+        msg: "Factory Floor (165.245.134.252) is reachable"
+
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: hostname_result
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        msg: "Hostname: {{ hostname_result.stdout }}"
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+
+    - name: Display uptime
+      ansible.builtin.debug:
+        msg: "Uptime: {{ uptime_result.stdout }}"
