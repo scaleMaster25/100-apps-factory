@@ -1,0 +1,41 @@
+---
+# Cleanup Playbook
+# Removes old log files and clears apt cache
+
+- name: System Cleanup
+  hosts: all
+  become: yes
+  tasks:
+    - name: Find log files older than 7 days in /var/log
+      ansible.builtin.find:
+        paths: /var/log
+        age: 7d
+        file_type: file
+        recurse: yes
+      register: old_logs
+
+    - name: Remove old log files
+      ansible.builtin.file:
+        path: "{{ item.path }}"
+        state: absent
+      loop: "{{ old_logs.files }}"
+      when: old_logs.matched > 0
+      ignore_errors: yes
+
+    - name: Display number of log files removed
+      ansible.builtin.debug:
+        msg: "Removed {{ old_logs.matched }} log files older than 7 days"
+
+    - name: Clear apt cache
+      ansible.builtin.apt:
+        autoclean: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Autoremove unused packages
+      ansible.builtin.apt:
+        autoremove: yes
+      when: ansible_os_family == "Debian"
+
+    - name: Display cleanup summary
+      ansible.builtin.debug:
+        msg: "Cleanup completed successfully"
