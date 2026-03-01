@@ -1,0 +1,40 @@
+---
+- name: "UNIVERSAL SSH FIX: Secure Keys & Permissions"
+  hosts: all
+  become: yes  # Run as root so we can fix permissions for anyone
+  vars:
+    # CHANGE THIS to your actual service user (e.g., moon2vex)
+    target_user: "moon2vex"
+
+  tasks:
+    # 1. Fix the Folder (The "House")
+    # Ensures the .ssh directory exists and ONLY the user can enter it.
+    - name: Ensure .ssh directory exists with secure 700 permissions
+      file:
+        path: "/home/{{ target_user }}/.ssh"
+        state: directory
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0700'
+
+    # 2. Fix the Lock (The Public Key - for receiving connections)
+    # Ensures authorized_keys exists and ONLY the user can read it.
+    - name: Ensure authorized_keys has secure 600 permissions
+      file:
+        path: "/home/{{ target_user }}/.ssh/authorized_keys"
+        state: file
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0600'
+      ignore_errors: yes # Valid to ignore if this is a brand new server
+
+    # 3. Fix the Key (The Private Key - for making connections)
+    # This specifically fixes your "Permission Denied" error on the Controller.
+    - name: Ensure Private Keys (id_rsa) have secure 600 permissions
+      file:
+        path: "/home/{{ target_user }}/.ssh/id_rsa"
+        state: file
+        owner: "{{ target_user }}"
+        group: "{{ target_user }}"
+        mode: '0600'
+      ignore_errors: yes # Ignore if this server doesn't have a private key
