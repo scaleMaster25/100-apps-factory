@@ -1,19 +1,8 @@
 ---
 # Test Klume Dev Server connectivity
 
-- name: Test Klume Dev Server
-  hosts: localhost
-  become: no
-  tasks:
-    - name: Add Klume Dev to inventory
-      ansible.builtin.add_host:
-        name: klume_dev
-        ansible_host: 165.245.128.251
-        ansible_user: root
-        ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
-
 - name: Ping Klume Dev Server
-  hosts: klume_dev
+  hosts: KlumeDev
   become: yes
   tasks:
     - name: Check if server is reachable
