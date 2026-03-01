@@ -1,4 +1,4 @@
-:all:
+new-servers:
   hosts:
     KlumeDev:
       ansible_host: 165.245.128.251
