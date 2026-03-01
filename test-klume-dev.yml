@@ -1,0 +1,40 @@
+---
+# Test Klume Dev Server connectivity
+
+- name: Test Klume Dev Server
+  hosts: localhost
+  become: no
+  tasks:
+    - name: Add Klume Dev to inventory
+      ansible.builtin.add_host:
+        name: klume_dev
+        ansible_host: 165.245.128.251
+        ansible_user: root
+
+- name: Ping Klume Dev Server
+  hosts: klume_dev
+  become: yes
+  tasks:
+    - name: Check if server is reachable
+      ansible.builtin.ping:
+      register: ping_result
+
+    - name: Display ping result
+      ansible.builtin.debug:
+        msg: "Klume Dev Server (165.245.128.251) is reachable"
+
+    - name: Get hostname
+      ansible.builtin.command: hostname
+      register: hostname_result
+
+    - name: Display hostname
+      ansible.builtin.debug:
+        msg: "Hostname: {{ hostname_result.stdout }}"
+
+    - name: Check uptime
+      ansible.builtin.command: uptime
+      register: uptime_result
+
+    - name: Display uptime
+      ansible.builtin.debug:
+        msg: "Uptime: {{ uptime_result.stdout }}"
