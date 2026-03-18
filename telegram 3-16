@@ -1,0 +1,54 @@
+Task Summary: Telegram Bot Integration
+Date: 3-16-2026
+
+## Setup Completed
+1. Environment Configuration
+   - Added TELEGRAM_BOT_TOKEN to /root/agents/ssh_armorer/.env
+
+2. Dependencies
+   - Installed python-telegram-bot package (v22.6)
+
+3. Telegram Bot Wrapper
+   - Created telegram_bot.py in /root/agents/ssh_armorer/
+   - Integrated with existing dispatcher.py LangGraph workflow
+   - Implemented /start command handler
+   - Implemented message handler that passes Telegram messages to Dispatcher
+   - Added typing indicator for better UX
+
+4. Execution
+    - Bot launched and running in polling mode
+    - Listening for Telegram messages on configured token
+
+5. Systemd Service Configuration
+     - Created /etc/systemd/system/factory-bot.service
+     - Service name: factory-bot
+     - Configured for automatic restart on failure (Restart=always)
+     - Enabled to start on boot
+     - Status: active (running) as of 2026-03-16 07:55:13 UTC
+
+6. Remote Reboot Feature
+     - Added reboot_server function to telegram_bot.py
+     - Implemented /reboot command with server argument
+     - SERVERS dictionary configured with 'controller' and 'moonbot2'
+     - Added sudoers rule for passwordless reboot: /etc/sudoers.d/telegram-bot-reboot
+     - Service restarted and feature active as of 2026-03-16 08:12:02 UTC
+
+7. Remote Log Viewer Feature
+     - Added view_logs function to telegram_bot.py
+     - Implemented /logs command with server and optional service arguments
+     - Defaults service to 'syslog' when only server specified
+     - Fetches last 15 lines using journalctl -u <service> -n 15 --no-pager
+     - Executes locally for 'controller' target
+     - Executes via SSH for remote servers (moonbot2)
+     - Error handling with subprocess.CalledProcessError catching
+     - Sends formatted logs to Telegram chat with Markdown
+     - Service restarted and feature active as of 2026-03-16 12:48:39 UTC
+   
+## Features
+- Zero-touch deployment via wrapper pattern
+- Memory-aware integration with LangGraph
+- Error handling with user-friendly messages
+- Real-time typing indicators
+- Command and message routing
+- Remote server reboot capability (/reboot controller|moonbot2)
+- Remote log viewing capability (/logs <server> [service])

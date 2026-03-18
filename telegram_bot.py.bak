@@ -1,0 +1,97 @@
+import os
+import asyncio
+import subprocess
+from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from langchain_core.messages import HumanMessage
+
+from dispatcher import graph
+
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN")
+
+# Telegram message limit is 4096 characters
+TELEGRAM_MAX_LENGTH = 4000  # Leave some buffer
+
+async def send_long_message(update: Update, message: str):
+    """Send a message, splitting it if it's too long for Telegram."""
+    if len(message) <= TELEGRAM_MAX_LENGTH:
+        await update.message.reply_text(message)
+    else:
+        # Split into chunks
+        chunks = []
+        current_chunk = ""
+        for line in message.split('\n'):
+            if len(current_chunk) + len(line) + 1 > TELEGRAM_MAX_LENGTH:
+                chunks.append(current_chunk)
+                current_chunk = line
+            else:
+                if current_chunk:
+                    current_chunk += '\n' + line
+                else:
+                    current_chunk = line
+        if current_chunk:
+            chunks.append(current_chunk)
+
+        # Send each chunk
+        for i, chunk in enumerate(chunks, 1):
+            prefix = f"[{i}/{len(chunks)}] " if len(chunks) > 1 else ""
+            await update.message.reply_text(prefix + chunk)
+            # Small delay between chunks to avoid rate limiting
+            if i < len(chunks):
+                await asyncio.sleep(0.5)
+
+async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("🏭 100-App Factory Dispatcher Online. What do you need?")
+
+async def reboot_server(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await update.message.reply_text("⚠️ Reboot command not implemented. Use the dispatcher for server management.")
+
+async def view_logs(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    # Forward log requests to the dispatcher's logs_worker
+    if not context.args or len(context.args) < 1:
+        await update.message.reply_text("⚠️ Usage: /logs <server> <log_file>\nExample: /logs klume-dev-server syslog")
+        return
+
+    # Build the query for the dispatcher
+    server_name = context.args[0]
+    log_file = context.args[1] if len(context.args) > 1 else 'syslog'
+    query = f"/logs {server_name} {log_file}"
+
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+
+    try:
+        result = await graph.ainvoke({"messages": [HumanMessage(content=query)]})
+        bot_response = result['messages'][-1].content
+        await send_long_message(update, bot_response)
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Dispatcher Error: {e}")
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input = update.message.text
+
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+
+    try:
+        result = await graph.ainvoke({"messages": [HumanMessage(content=user_input)]})
+        bot_response = result['messages'][-1].content
+        await send_long_message(update, bot_response)
+    except Exception as e:
+        await update.message.reply_text(f"⚠️ Dispatcher Error: {e}")
+
+def main():
+    print("📡 Booting Telegram Comm Link...")
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
+
+    # Register handlers
+    application.add_handler(CommandHandler("start", start))
+    application.add_handler(CommandHandler("reboot", reboot_server))
+    application.add_handler(CommandHandler("logs", view_logs))
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+
+    print("🚀 Telegram Dispatcher Online. Listening for commands...")
+    application.run_polling()
+
+if __name__ == "__main__":
+    main()

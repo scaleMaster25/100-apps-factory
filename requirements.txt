@@ -1,0 +1,10 @@
+# SSH Armorer Agent Requirements
+
+# LangGraph and LangChain dependencies for orchestrator
+langgraph>=0.2.0
+langchain>=0.3.0
+langchain-openai>=0.2.0
+
+# Note: Core SSH Armorer uses Python standard library modules
+# (asyncio, subprocess, os, json, datetime, typing)
+python-dotenv

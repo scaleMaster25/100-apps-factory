@@ -1,0 +1,61 @@
+import os
+import asyncio
+import time
+from dotenv import load_dotenv
+from telegram import Update
+from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
+from langchain_core.messages import HumanMessage
+
+from dispatcher import graph 
+
+load_dotenv()
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_BOT_TOKEN')
+
+class TaskClipboard:
+    def __init__(self):
+        self.is_running = False
+        self.current_action = 'Analyzing request...'
+        self.start_time = 0
+
+clipboard = TaskClipboard()
+
+async def watchdog_timer(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    await asyncio.sleep(120)
+    if not clipboard.is_running: return
+    await context.bot.send_message(chat_id=update.effective_chat.id, text=f'⏱️ Update (2 mins): {clipboard.current_action}')
+    
+    elapsed = 120
+    while clipboard.is_running and elapsed < 300:
+        await asyncio.sleep(60)
+        elapsed += 60
+        if not clipboard.is_running: return
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f'⏱️ Update ({elapsed//60} mins): {clipboard.current_action}')
+        
+    if clipboard.is_running:
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=f'⚠️ Notice: Task exceeding 5 mins. Continuing to execute in background.')
+
+async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_input = update.message.text
+    clipboard.is_running = True
+    clipboard.start_time = time.time()
+    clipboard.current_action = 'Routing task through Master Dispatcher...'
+    
+    watchdog_task = asyncio.create_task(watchdog_timer(update, context))
+    await context.bot.send_chat_action(chat_id=update.effective_chat.id, action='typing')
+    
+    try:
+        result = await graph.ainvoke({'messages': [HumanMessage(content=user_input)]})
+        await update.message.reply_text(result['messages'][-1].content)
+    except Exception as e:
+        await update.message.reply_text(f'⚠️ Dispatcher Error: {e}')
+    finally:
+        clipboard.is_running = False
+        watchdog_task.cancel()
+
+def main():
+    application = Application.builder().token(TELEGRAM_TOKEN).build()
+    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message))
+    application.run_polling(allowed_updates=Update.ALL_TYPES)
+
+if __name__ == '__main__':
+    main()
